@@ -386,7 +386,8 @@ async def shipping(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             f"💘 NEW SHIP ALERT! 💘\n\n"
             f"{user1_mention} {compatibility_emoji} {user2_mention}\n💪Ship Strength: {compatibility}%{compatibility_emoji}\n{compatibility_msg}\n\n"
-            f"🔒 Next shipping available in 24 hours!",
+            f"🔒 Next shipping available in 24 hours!\n\n"
+            f"Tip: You can replace someone in this ship by typing `/rival 1` for {user1_name} or `/rival 2` for {user2_name}",
             parse_mode='HTML'
         )
     except Exception as e:
@@ -396,7 +397,8 @@ async def shipping(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             f"💘 NEW SHIP ALERT! 💘\n\n"
             f"User {user1_id} {compatibility_emoji} User {user2_id}\n💪Ship Strength: {compatibility}%{compatibility_emoji}\n{compatibility_msg}\n\n"
-            f"🔒 Next shipping available in 24 hours!"
+            f"🔒 Next shipping available in 24 hours!\n\n"
+            f"Tip: You can replace someone in this ship by typing `/rival 1` for {user1_id} or `/rival 2` for {user2_id}"
         )
 
 async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -511,10 +513,12 @@ async def rival(update: Update, context: ContextTypes.DEFAULT_TYPE):
         shipping_data['rivals'] += [ user1_id if pos == 1 else user2_id ]
         bot_data.set_shipping_data(chat_id, shipping_data)
         if pos == 1:
+            bot_data.shipped_stats[chat_id][user1_id] -= 1
             bot_data.current_pairs[chat_id] = (update.effective_user.id, user2_id)
             compatibility_msg = compatibility_msg.format(rival_name, user2_name)
             resp_text += f"{rival_name} {compatibility_emoji} {user2_name}\n💪Ship Strength: {compatibility}%{compatibility_emoji}\n{compatibility_msg}\n\n"
         else:
+            bot_data.shipped_stats[chat_id][user2_id] -= 1
             bot_data.current_pairs[chat_id] = (user1_id, update.effective_user.id)
             compatibility_msg = compatibility_msg.format(user1_name, rival_name)
             resp_text += f"{user1_name} {compatibility_emoji} {rival_name}\n💪Ship Strength: {compatibility}%{compatibility_emoji}\n{compatibility_msg}\n\n"
