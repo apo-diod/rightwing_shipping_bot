@@ -36,6 +36,8 @@ DATA_FILE = 'data/shipping_data.json'
 
 class ShippingBot:
     def __init__(self):
+        # group_id -> misc_data
+        self.shipping_data = dict()
         # group_id -> deque of user_ids (last 500)
         self.user_lists = defaultdict(lambda: deque(maxlen=500))
         
@@ -90,6 +92,8 @@ class ShippingBot:
                 for group_id, stats in data.get('shipped_stats', {}).items():
                     self.shipped_stats[int(group_id)] = defaultdict(int, {int(k): v for k, v in stats.items()})
                 
+                # Restore shipping data
+                self.shipping_data = {int(group_id): ship_data for group_id, ship_data in data.get('shipping_data', {}).items()}
                 logger.info("Data loaded successfully")
             except Exception as e:
                 logger.error(f"Error loading data: {e}")
@@ -141,6 +145,9 @@ class ShippingBot:
         users.append(user_id)
         self.save_data()
     
+    def get_shipping_data(self, group_id: int):
+        return self.shipping_data.get(group_id, dict())
+
     def get_unique_users(self, group_id: int):
         """Get unique users from the list"""
         return list(set(self.user_lists[group_id]))
@@ -189,7 +196,8 @@ class ShippingBot:
         
         compatibility = random.randint(0, 100)
 
-        self.current_pairs[group_id] = (user1, user2, compatibility)
+        self.current_pairs[group_id] = (user1, user2)
+        self.shipping_data[group_id] = dict()
         self.last_shipping[group_id] = datetime.now()
         self.current_shipper[group_id] = shipper_id
         self.reset_votes[group_id].clear()
@@ -198,6 +206,9 @@ class ShippingBot:
         self.shipper_stats[group_id][shipper_id] += 1
         self.shipped_stats[group_id][user1] += 1
         self.shipped_stats[group_id][user2] += 1
+
+        self.shipping_data[group_id]['compatibility'] = compatibility
+        self.shipping_data[group_id]['compatibility_emoji'] = map_compatibility_emoji(compatibility)
         
         self.save_data()
         
@@ -265,13 +276,15 @@ async def shipping(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(message)
         return
     
-    user1_id, user2_id, compatibility = bot_data.create_ship(chat_id, user_id)
+    user1_id, user2_id = bot_data.create_ship(chat_id, user_id)
     
     # Get user information
     try:
         user1 = await context.bot.get_chat_member(chat_id, user1_id)
         user2 = await context.bot.get_chat_member(chat_id, user2_id)
-        
+        shipping_data = bot_data.get_shipping_data(chat_id)
+        compatibility = shipping_data.get('compatibility', -1)
+        compatibility_emoji = shipping_data.get('compatibility_emoji', '😑')
         # Get full name (first name + last name if available)
         user1_name = user1.user.first_name
         if user1.user.last_name:
@@ -287,7 +300,7 @@ async def shipping(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         await update.message.reply_text(
             f"💘 NEW SHIP ALERT! 💘\n\n"
-            f"{user1_mention} ❤️ {user2_mention}\n💪Ship Strength: {map_compatibility_emoji(compatibility)}{compatibility}%\n\n"
+            f"{user1_mention} ❤️ {user2_mention}\n💪Ship Strength: {compatibility_emoji}{compatibility}%\n\n"
             f"🔒 Next shipping available in 24 hours!",
             parse_mode='HTML'
         )
@@ -296,7 +309,7 @@ async def shipping(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Fallback to user IDs
         await update.message.reply_text(
             f"💘 NEW SHIP ALERT! 💘\n\n"
-            f"User {user1_id} ❤️ User {user2_id}\n💪Ship Strength: {map_compatibility_emoji(compatibility)}{compatibility}%\n\n"
+            f"User {user1_id} ❤️ User {user2_id}\n💪Ship Strength: {compatibility_emoji}{compatibility}%\n\n"
             f"🔒 Next shipping available in 24 hours!"
         )
 
@@ -318,7 +331,7 @@ async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
     unique_users = bot_data.get_unique_users(chat_id)
     
     # Check if user is part of current pair
-    if user_id in current_pair[:2]:
+    if user_id in current_pair:
         bot_data.reset_ship(chat_id)
         await update.message.reply_text("✅ Ship has been reset by a ship member!")
         return
@@ -351,7 +364,10 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     status_msg += f"👥 Active users: {len(unique_users)}\n\n"
     
     if chat_id in bot_data.current_pairs:
-        user1_id, user2_id, compatibility = bot_data.current_pairs[chat_id]
+        user1_id, user2_id = bot_data.current_pairs[chat_id]
+        shipping_data = bot_data.get_shipping_data(chat_id)
+        compatibility = shipping_data.get('compatibility', -1)
+        compatibility_emoji = shipping_data.get('compatibility_emoji', '😑')
         
         try:
             user1 = await context.bot.get_chat_member(chat_id, user1_id)
@@ -367,11 +383,11 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 user2_name += f" {user2.user.last_name}"
             
             status_msg += f"💑 Current ship:\n"
-            status_msg += f"{user1_name} ❤️ {user2_name}\n💪Ship Strength: {map_compatibility_emoji(compatibility)}{compatibility}%\n\n"
+            status_msg += f"{user1_name} ❤️ {user2_name}\n💪Ship Strength: {compatibility_emoji}{compatibility}%\n\n"
         except Exception as e:
             logger.error(f"Error getting user info: {e}")
             status_msg += f"💑 Current ship:\n"
-            status_msg += f"User {user1_id} ❤️ User {user2_id}\n💪Ship Strength: {map_compatibility_emoji(compatibility)}{compatibility}%\n\n"
+            status_msg += f"User {user1_id} ❤️ User {user2_id}\n💪Ship Strength: {compatibility_emoji}{compatibility}%\n\n"
     
     if chat_id in bot_data.last_shipping:
         time_passed = datetime.now() - bot_data.last_shipping[chat_id]
