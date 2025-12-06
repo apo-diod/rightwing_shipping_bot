@@ -518,6 +518,7 @@ async def rival(update: Update, context: ContextTypes.DEFAULT_TYPE):
             bot_data.current_pairs[chat_id] = (user1_id, update.effective_user.id)
             compatibility_msg = compatibility_msg.format(user1_name, rival_name)
             resp_text += f"{user1_name} {compatibility_emoji} {rival_name}\n💪Ship Strength: {compatibility}%{compatibility_emoji}\n{compatibility_msg}\n\n"
+        await update.message.reply_text(resp_text)
         bot_data.save_data()
         return
     await update.message.reply_text("❌ There needs to be a pair to rival!")
