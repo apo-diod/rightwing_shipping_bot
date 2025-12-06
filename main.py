@@ -116,7 +116,7 @@ class ShippingBot:
         # group_id -> deque of user_ids (last 500)
         self.user_lists = defaultdict(lambda: deque(maxlen=500))
         
-        # group_id -> (user_id_1, user_id_2, compatibility)
+        # group_id -> (user_id_1, user_id_2)
         self.current_pairs = {}
         
         # group_id -> datetime of last shipping
@@ -222,6 +222,9 @@ class ShippingBot:
     
     def get_shipping_data(self, group_id: int):
         return self.shipping_data.get(group_id, dict())
+    
+    def set_shipping_data(self, group_id: int, shipping_data):
+        self.shipping_data[group_id] = shipping_data
 
     def get_unique_users(self, group_id: int):
         """Get unique users from the list"""
@@ -282,6 +285,7 @@ class ShippingBot:
         self.shipped_stats[group_id][user1] += 1
         self.shipped_stats[group_id][user2] += 1
 
+        self.shipping_data = dict()
         self.shipping_data[group_id]['compatibility'] = compatibility
         self.shipping_data[group_id]['compatibility_emoji'] = map_compatibility_emoji(compatibility)
         self.shipping_data[group_id]['compatibility_msg'] = map_compatibility_msg(compatibility)
@@ -428,6 +432,92 @@ async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
             f"🗳️ Reset vote registered! ({current_votes}/{votes_needed} votes needed)"
         )
+
+async def rival(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /rival command"""
+    chat_id = update.effective_chat.id
+    
+    if update.effective_chat.type == 'private':
+        await update.message.reply_text("❌ This command only works in group chats!")
+        return
+    resp_text = ""
+    if chat_id in bot_data.current_pairs:
+        user1_id, user2_id = bot_data.current_pairs[chat_id]
+        
+        if update.effective_user.id in [user1_id, user2_id]:
+            await update.message.reply_text("❌ You are already in this pairing!")
+            return
+        if not len(context.args) or context.args[0] not in ['1', '2']:
+            await update.message.reply_text("❌ Invalid syntax! Should be /rival 1 or /rival 2")
+            return
+        user1 = await context.bot.get_chat_member(chat_id, user1_id)
+        user2 = await context.bot.get_chat_member(chat_id, user2_id)
+        rival_user = await context.bot.get_chat_member(chat_id, update.effective_user.id)
+        shipping_data = bot_data.get_shipping_data(chat_id)
+        compatibility = shipping_data.get('compatibility', -1)
+        compatibility_emoji = shipping_data.get('compatibility_emoji', '😑')
+        compatibility_msg = shipping_data.get('compatibility_msg', 'Mediocre ship...')
+        previous_rivals = shipping_data.get('rivals', [])
+        if update.effective_user.id in previous_rivals:
+            await update.message.reply_text("❌ You already did that with this ship!")
+            return
+        rival_compatibility = random.randint(1, 100)
+
+        user1_name = user1.user.first_name
+        if user1.user.last_name:
+            user1_name += f" {user1.user.last_name}"
+        
+        user2_name = user2.user.first_name
+        if user2.user.last_name:
+            user2_name += f" {user2.user.last_name}"
+        
+        rival_name = rival_user.user.first_name
+        if rival_user.user.last_name:
+            rival_name += f" {rival_user.user.last_name}"
+
+        # Create mentions with names (this will ping them)
+        user1_mention = f'<a href="tg://user?id={user1_id}">{user1_name}</a>'
+        user2_mention = f'<a href="tg://user?id={user2_id}">{user2_name}</a>'
+        pos = int(context.args[0])
+        resp_text += f"🤜🤛{rival_name} just became a rival for {user1_name if pos == 1 else user2_name}!\n"
+        resp_text += f"{user1_mention if pos == 1 else user2_mention} You have been rivaled!!!\n"
+        resp_text += f"Your rival has {rival_compatibility}% compatibility with {user2_name if pos == 1 else user1_name}\n\n"
+        if int(compatibility) >= rival_compatibility:
+            incr_compatibility = random.randint(1, 10) + compatibility
+            shipping_data['compatibility'] = incr_compatibility
+            shipping_data['rivals'] = shipping_data.get('rivals', []) + [update.effective_user.id]
+            if compatibility < 10 <= incr_compatibility or compatibility < 30 <= incr_compatibility or compatibility < 50 <= incr_compatibility or compatibility < 69 <= incr_compatibility or compatibility < 70 <= incr_compatibility or compatibility < 85 <= incr_compatibility or compatibility < 95 <= incr_compatibility:
+                compatibility_emoji = map_compatibility_emoji(incr_compatibility)
+                compatibility_msg = map_compatibility_msg(incr_compatibility)
+                shipping_data['compatibility_emoji'] = compatibility_emoji
+                shipping_data['compatibility_msg'] = compatibility_msg
+                compatibility_msg = compatibility_msg.format(user1_name, user2_name)
+                resp_text += f"❣️{user1_name} and {user2_name} compatibility has leveled up!\n{user1_name} {compatibility_emoji} {user2_name}\n💪Ship Strength: {compatibility}%{compatibility_emoji}\n{compatibility_msg}\n\n"
+            else:
+                resp_text += f"❣️{user1_name} and {user2_name} compatibility is higher. Because of that, their compatibility is now {incr_compatibility}%!"
+            bot_data.set_shipping_data(shipping_data)
+            await update.message.reply_text(resp_text)
+            return
+        resp_text += f"{user2_mention if pos == 1 else user1_mention} you have a new ship partner! It's {rival_name}!🎉\n"
+        compatibility_emoji = map_compatibility_emoji(rival_compatibility)
+        compatibility_msg = map_compatibility_msg(rival_compatibility)
+        shipping_data['compatibility_emoji'] = compatibility_emoji
+        shipping_data['compatibility_msg'] = compatibility_msg
+        shipping_data['compatibility'] = rival_compatibility
+        shipping_data['rivals'] += [ user1_id if pos == 1 else user2_id ]
+        bot_data.set_shipping_data(shipping_data)
+        if pos == 1:
+            bot_data.current_pairs[chat_id] = (update.effective_user.id, user2_id)
+            compatibility_msg = compatibility_msg.format(rival_name, user2_name)
+            resp_text += f"{rival_name} {compatibility_emoji} {user2_name}\n💪Ship Strength: {compatibility}%{compatibility_emoji}\n{compatibility_msg}\n\n"
+        else:
+            bot_data.current_pairs[chat_id] = (user1_id, update.effective_user.id)
+            compatibility_msg = compatibility_msg.format(user1_name, rival_name)
+            resp_text += f"{user1_name} {compatibility_emoji} {rival_name}\n💪Ship Strength: {compatibility}%{compatibility_emoji}\n{compatibility_msg}\n\n"
+        bot_data.save_data()
+        return
+    await update.message.reply_text("❌ There needs to be a pair to rival!")
+    return
 
 async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /status command"""
