@@ -18,11 +18,86 @@ compatibility_mapping = {
     (95, 100): ["💘", "🥰", "✨", "🌟", "💞", "💖"]
 }
 
+compatibility_messages = {
+    (0, 9): [
+        "This isn't a ship, it's a hostage situation!",
+        "More red flags than a parade!",
+        "Error 404: Romance not found.",
+        "It's the thought that counts?",
+        "Think of the dramatic potential!",
+        "A true underdog story!",
+        "They have nowhere to go but up! ...Right?",
+        "A catastrophe waiting to happen!",
+        "The universe itself is protesting this union!",
+        "This ship is already sinking and it hasn't left port!",
+        "More likely to start a war than a romance!",
+        "Well, this is certainly a pairing that exists.",
+        "If {0} and {1} were the last two people on earth, humanity would end.",
+        "No. Just... no.",
+        "{0} and {1}: The only thing they'll be sharing is battlefield!"
+    ],
+    (10, 29): [
+        "Their love language is arguing.",
+        "{0} and {1}: The cringe is strong with this one.",
+        "A delicate ecosystem of misunderstanding and side-eyes.",
+        "Get the popcorn ready, this will be entertaining!",
+        "I give it a week. Maybe.",
+        "They said 'ship anyone,' so... here we are.",
+        "This ship has 'future submarine' written all over it."
+    ],
+    (30, 49): [
+        "The vibes are... confused. But in a fun way?",
+        "The pieces are all here... they're just from different puzzles.",
+        "It's a work in progress. Very, very slow progress.",
+        "The ship's motto is 'We're figuring it out!'",
+        "{0} and {1}: Making it work through sheer force of will."
+    ],
+    (50, 68): [
+        "They cancel out each other's crazy. It's... efficient!",
+        "This ship feels like coming home after a long day.",
+        "Good soil for something to grow! ",
+        "A foundation strong enough to build on!",
+        "{0} and {1}: Better together than apart!",
+        "They might not set the world on fire, but they'll keep each other warm.",
+        "Slow and steady wins the race!"
+    ],
+    (69, 69): [
+        "Nice. 😏",
+        "This ship operates on a different kind of friction."
+    ],
+    (70, 84): [
+        "A stellar match! This ship is already shining bright.",
+        "{0} and {1}: A connection that just clicks.",
+        "This feels right. Really, really right.",
+        "The potential here is through the roof!",
+        "A little bit of fate, a little bit of magic.",
+        "Bullseye! This match hits the sweet spot.",
+        "You can just feel the good energy between them!"
+    ],
+    (85, 94): [
+        "{0} will laugh at {1}'s bad jokes unironically.",
+        "{0} will share their fries with {1} without a second thought.",
+        "{1}'s stubbornness will melt the first time {0} gives them that look.",
+        "This is the kind of pairing where {1} will instinctively know when {0} needs a hug."
+    ],
+    (95, 100): [
+        "{1} will know what {0} is thinking with just a glance, and {0} will never feel misunderstood again.",
+        "The universe spent centuries crafting {0} and {1} specifically for each other.",
+        "{1} will be the last thought on {0}'s mind every night, and the first every morning."
+    ]
+}
+
 def map_compatibility_emoji(compatibiility):
     for key in compatibility_mapping.keys():
         if compatibiility in range(key[0], key[1]+1):
             return random.choice(compatibility_mapping[key])
     return "😑"
+
+def map_compatibility_msg(compatibiility):
+    for key in compatibility_messages.keys():
+        if compatibiility in range(key[0], key[1]+1):
+            return random.choice(compatibility_messages[key])
+    return "Mediocre ship"
 
 # Configure logging
 logging.basicConfig(
@@ -209,6 +284,7 @@ class ShippingBot:
 
         self.shipping_data[group_id]['compatibility'] = compatibility
         self.shipping_data[group_id]['compatibility_emoji'] = map_compatibility_emoji(compatibility)
+        self.shipping_data[group_id]['compatibility_msg'] = map_compatibility_msg(compatibility)
         
         self.save_data()
         
@@ -285,6 +361,7 @@ async def shipping(update: Update, context: ContextTypes.DEFAULT_TYPE):
         shipping_data = bot_data.get_shipping_data(chat_id)
         compatibility = shipping_data.get('compatibility', -1)
         compatibility_emoji = shipping_data.get('compatibility_emoji', '😑')
+        compatibility_msg = shipping_data.get('compatibility_msg', 'Mediocre ship...')
         # Get full name (first name + last name if available)
         user1_name = user1.user.first_name
         if user1.user.last_name:
@@ -297,19 +374,20 @@ async def shipping(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Create mentions with names (this will ping them)
         user1_mention = f'<a href="tg://user?id={user1_id}">{user1_name}</a>'
         user2_mention = f'<a href="tg://user?id={user2_id}">{user2_name}</a>'
-        
+        compatibility_msg = compatibility_msg.format(user1_name, user2_name)
         await update.message.reply_text(
             f"💘 NEW SHIP ALERT! 💘\n\n"
-            f"{user1_mention} ❤️ {user2_mention}\n💪Ship Strength: {compatibility_emoji}{compatibility}%\n\n"
+            f"{user1_mention} {compatibility_emoji} {user2_mention}\n💪Ship Strength: {compatibility}%{compatibility_emoji}\n{compatibility_msg}\n\n"
             f"🔒 Next shipping available in 24 hours!",
             parse_mode='HTML'
         )
     except Exception as e:
         logger.error(f"Error getting user info: {e}")
+        compatibility_msg = compatibility_msg.format(user1_id, user2_id)
         # Fallback to user IDs
         await update.message.reply_text(
             f"💘 NEW SHIP ALERT! 💘\n\n"
-            f"User {user1_id} ❤️ User {user2_id}\n💪Ship Strength: {compatibility_emoji}{compatibility}%\n\n"
+            f"User {user1_id} {compatibility_emoji} User {user2_id}\n💪Ship Strength: {compatibility}%{compatibility_emoji}\n{compatibility_msg}\n\n"
             f"🔒 Next shipping available in 24 hours!"
         )
 
@@ -368,6 +446,7 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
         shipping_data = bot_data.get_shipping_data(chat_id)
         compatibility = shipping_data.get('compatibility', -1)
         compatibility_emoji = shipping_data.get('compatibility_emoji', '😑')
+        compatibility_msg = shipping_data.get('compatibility_msg', 'Mediocre ship...')
         
         try:
             user1 = await context.bot.get_chat_member(chat_id, user1_id)
@@ -381,13 +460,16 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
             user2_name = user2.user.first_name
             if user2.user.last_name:
                 user2_name += f" {user2.user.last_name}"
+
+            compatibility_msg = compatibility_msg.format(user1_name, user2_name)
             
             status_msg += f"💑 Current ship:\n"
-            status_msg += f"{user1_name} ❤️ {user2_name}\n💪Ship Strength: {compatibility_emoji}{compatibility}%\n\n"
+            status_msg += f"{user1_name} {compatibility_emoji} {user2_name}\n💪Ship Strength: {compatibility}%{compatibility_emoji}\n{compatibility_msg}\n\n"
         except Exception as e:
             logger.error(f"Error getting user info: {e}")
+            compatibility_msg = compatibility_msg.format(user1_id, user2_id)
             status_msg += f"💑 Current ship:\n"
-            status_msg += f"User {user1_id} ❤️ User {user2_id}\n💪Ship Strength: {compatibility_emoji}{compatibility}%\n\n"
+            status_msg += f"User {user1_id} {compatibility_emoji} User {user2_id}\n💪Ship Strength: {compatibility}%{compatibility_emoji}\n{compatibility_msg}\n\n"
     
     if chat_id in bot_data.last_shipping:
         time_passed = datetime.now() - bot_data.last_shipping[chat_id]
