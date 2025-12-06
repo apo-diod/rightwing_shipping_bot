@@ -499,7 +499,7 @@ async def rival(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 resp_text += f"❣️{user1_name} and {user2_name} compatibility has leveled up!\n{user1_name} {compatibility_emoji} {user2_name}\n💪Ship Strength: {compatibility}%{compatibility_emoji}\n{compatibility_msg}\n\n"
             else:
                 resp_text += f"❣️{user1_name} and {user2_name} compatibility is higher. Because of that, their compatibility is now {incr_compatibility}%!"
-            bot_data.set_shipping_data(shipping_data)
+            bot_data.set_shipping_data(chat_id, shipping_data)
             await update.message.reply_text(resp_text)
             return
         resp_text += f"{user2_mention if pos == 1 else user1_mention} you have a new ship partner! It's {rival_name}!🎉\n"
@@ -509,7 +509,7 @@ async def rival(update: Update, context: ContextTypes.DEFAULT_TYPE):
         shipping_data['compatibility_msg'] = compatibility_msg
         shipping_data['compatibility'] = rival_compatibility
         shipping_data['rivals'] += [ user1_id if pos == 1 else user2_id ]
-        bot_data.set_shipping_data(shipping_data)
+        bot_data.set_shipping_data(chat_id, shipping_data)
         if pos == 1:
             bot_data.current_pairs[chat_id] = (update.effective_user.id, user2_id)
             compatibility_msg = compatibility_msg.format(rival_name, user2_name)
