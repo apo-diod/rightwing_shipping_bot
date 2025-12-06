@@ -200,6 +200,9 @@ class ShippingBot:
                 'shipped_stats': {
                     str(group_id): {str(k): v for k, v in stats.items()}
                     for group_id, stats in self.shipped_stats.items()
+                },
+                'shipping_data': {
+                    str(group_id): data for group_id, data in self.shipping_data.items()
                 }
             }
             
