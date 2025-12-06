@@ -288,7 +288,7 @@ class ShippingBot:
         self.shipped_stats[group_id][user1] += 1
         self.shipped_stats[group_id][user2] += 1
 
-        self.shipping_data = dict()
+        self.shipping_data[group_id] = dict()
         self.shipping_data[group_id]['compatibility'] = compatibility
         self.shipping_data[group_id]['compatibility_emoji'] = map_compatibility_emoji(compatibility)
         self.shipping_data[group_id]['compatibility_msg'] = map_compatibility_msg(compatibility)
