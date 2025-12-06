@@ -4,6 +4,7 @@ WORKDIR /opt/bot
 
 COPY main.py ./
 COPY requirements.txt ./
+RUN mkdir data
 RUN pip install --no-cache-dir -r requirements.txt
 
 CMD [ "python", "./main.py" ]

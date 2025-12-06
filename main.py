@@ -32,7 +32,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Data storage
-DATA_FILE = 'shipping_data.json'
+DATA_FILE = 'data/shipping_data.json'
 
 class ShippingBot:
     def __init__(self):
