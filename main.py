@@ -160,7 +160,7 @@ class ShippingBot:
                 remaining = timedelta(hours=24) - time_passed
                 hours = remaining.seconds // 3600
                 minutes = (remaining.seconds % 3600) // 60
-                user1_id, user2_id, _ = bot_data.current_pairs[group_id]
+                user1_id, user2_id = bot_data.current_pairs[group_id]
                 status_msg = ""
                 try:
                     user1 = await context.bot.get_chat_member(group_id, user1_id)
@@ -224,7 +224,7 @@ class ShippingBot:
                 if self.shipper_stats[group_id][shipper_id] <= 0:
                     del self.shipper_stats[group_id][shipper_id]
             
-            user1_id, user2_id, _ = self.current_pairs[group_id]
+            user1_id, user2_id = self.current_pairs[group_id]
             self.shipped_stats[group_id][user1_id] -= 1
             self.shipped_stats[group_id][user2_id] -= 1
             
