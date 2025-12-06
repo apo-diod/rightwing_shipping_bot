@@ -654,6 +654,7 @@ async def post_init(application: Application):
         ("status", "Check current ship and cooldown"),
         ("top", "View top shippers and shipped users"),
         ("start", "Show bot information"),
+        ("rival", "Rival first or second members of the ship by typing 1 or 2 after the command!")
     ])
 
 def main():
