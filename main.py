@@ -340,6 +340,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/reset - Vote to reset current ship\n"
         "/status - Check current ship and cooldown\n"
         "/top - View top shippers and shipped users\n\n"
+        "/rival <1 or 2> - Rival the member of the ship!\n"
         "I'll track the last 500 users who message in this chat!"
     )
 
@@ -671,6 +672,7 @@ def main():
     application.add_handler(CommandHandler("reset", reset))
     application.add_handler(CommandHandler("status", status))
     application.add_handler(CommandHandler("top", top))
+    application.add_handler(CommandHandler("rival", rival))
     
     # Track all messages
     application.add_handler(MessageHandler(
