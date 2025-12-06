@@ -74,7 +74,7 @@ class ShippingBot:
                 
                 # Restore current pairs
                 for group_id, pair in data.get('current_pairs', {}).items():
-                    self.current_pairs[int(group_id)] = tuple(pair)
+                    self.current_pairs[int(group_id)] = tuple(pair) if len(pair) <= 2 else tuple(pair[:2])
                 
                 # Restore last shipping times
                 for group_id, timestamp in data.get('last_shipping', {}).items():
