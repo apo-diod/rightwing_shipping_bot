@@ -212,7 +212,7 @@ class ShippingBot:
         
         self.save_data()
         
-        return user1, user2, compatibility
+        return user1, user2
     
     def reset_ship(self, group_id: int):
         """Reset the current ship and revert stats"""
