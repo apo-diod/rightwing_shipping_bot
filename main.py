@@ -489,6 +489,7 @@ async def rival(update: Update, context: ContextTypes.DEFAULT_TYPE):
         resp_text += f"🤜🤛{rival_name} just became a rival for {user1_name if pos == 1 else user2_name}!\n"
         resp_text += f"{user1_mention if pos == 1 else user2_mention} You have been rivaled!!!\n"
         resp_text += f"Your rival has {rival_compatibility}% compatibility with {user2_name if pos == 1 else user1_name}\n\n"
+        logger.info(f'Rival comp: {rival_compatibility}. Main comp: {int(compatibility)}. Is main greater than rival? {int(compatibility) >= rival_compatibility}')
         if int(compatibility) >= rival_compatibility:
             incr_compatibility = random.randint(1, 10) + compatibility
             shipping_data['compatibility'] = incr_compatibility
@@ -517,12 +518,12 @@ async def rival(update: Update, context: ContextTypes.DEFAULT_TYPE):
             bot_data.shipped_stats[chat_id][user1_id] -= 1
             bot_data.current_pairs[chat_id] = (update.effective_user.id, user2_id)
             compatibility_msg = compatibility_msg.format(rival_name, user2_name)
-            resp_text += f"{rival_name} {compatibility_emoji} {user2_name}\n💪Ship Strength: {compatibility}%{compatibility_emoji}\n{compatibility_msg}\n\n"
+            resp_text += f"{rival_name} {compatibility_emoji} {user2_name}\n💪Ship Strength: {rival_compatibility}%{compatibility_emoji}\n{compatibility_msg}\n\n"
         else:
             bot_data.shipped_stats[chat_id][user2_id] -= 1
             bot_data.current_pairs[chat_id] = (user1_id, update.effective_user.id)
             compatibility_msg = compatibility_msg.format(user1_name, rival_name)
-            resp_text += f"{user1_name} {compatibility_emoji} {rival_name}\n💪Ship Strength: {compatibility}%{compatibility_emoji}\n{compatibility_msg}\n\n"
+            resp_text += f"{user1_name} {compatibility_emoji} {rival_name}\n💪Ship Strength: {rival_compatibility}%{compatibility_emoji}\n{compatibility_msg}\n\n"
         await update.message.reply_text(resp_text, parse_mode='HTML')
         bot_data.save_data()
         return
