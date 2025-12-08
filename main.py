@@ -275,7 +275,7 @@ class ShippingBot:
         unique_users = self.get_unique_users(group_id)
         user1, user2 = random.sample(unique_users, 2)
         
-        compatibility = random.randint(0, 100)
+        compatibility = random.randint(1, 100)
 
         self.current_pairs[group_id] = (user1, user2)
         self.shipping_data[group_id] = dict()
@@ -292,6 +292,7 @@ class ShippingBot:
         self.shipping_data[group_id]['compatibility'] = compatibility
         self.shipping_data[group_id]['compatibility_emoji'] = map_compatibility_emoji(compatibility)
         self.shipping_data[group_id]['compatibility_msg'] = map_compatibility_msg(compatibility)
+        self.shipping_data[group_id]['rivals'] = []
         
         self.save_data()
         
