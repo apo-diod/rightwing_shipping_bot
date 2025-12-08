@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 from collections import defaultdict, deque
 import random
 import json
@@ -279,7 +279,7 @@ class ShippingBot:
 
         self.current_pairs[group_id] = (user1, user2)
         self.shipping_data[group_id] = dict()
-        self.last_shipping[group_id] = datetime.now()
+        self.last_shipping[group_id] = datetime.combine(datetime.today().date(), time(0, 1))
         self.current_shipper[group_id] = shipper_id
         self.reset_votes[group_id].clear()
         
