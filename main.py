@@ -7,6 +7,10 @@ import os
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
+exceptions = [
+    '979798366'
+]
+
 compatibility_mapping = {
     (0, 9): ["☠️", "💀", "😭", "🚷", "⛔"],
     (10, 29): ["🌪️", "💥", "🆘", "😬", "⚠️"],
@@ -265,15 +269,20 @@ class ShippingBot:
                 return False, f"⏰ Shipping is on cooldown! Time remaining: {hours}h {minutes}m\n" + status_msg
         
         unique_users = self.get_unique_users(group_id)
+        unique_users = list(set(unique_users) - set(exceptions))
         if len(unique_users) < 2:
             return False, "❌ Need at least 2 different users in the chat to ship!"
         
         return True, ""
     
-    def create_ship(self, group_id: int, shipper_id: int) -> tuple[int, int]:
+    def create_ship(self, group_id: int, shipper_id: int, n=0) -> tuple[int, int]:
         """Create a random ship pair"""
+        if n == 100:
+            return False, False
         unique_users = self.get_unique_users(group_id)
         user1, user2 = random.sample(unique_users, 2)
+        if user1 in exceptions or user2 in exceptions:
+            return self.create_ship(group_id, shipper_id, n=n+1)
         
         compatibility = random.randint(1, 100)
 
